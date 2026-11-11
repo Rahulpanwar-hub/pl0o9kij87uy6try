@@ -1,0 +1,827 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Projectile Motion Physics Lab</title>
+<style>
+:root {
+  --blue:#2563eb; --green:#059669; --orange:#ea580c;
+  --purple:#9333ea; --ink:#172033; --line:#dbe4ef;
+}
+* { box-sizing:border-box; }
+body {
+  margin:0; color:var(--ink); background:#f1f5f9;
+  font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+.app { min-height:100vh; background:#fff; }
+.topbar {
+  height:68px; display:flex; align-items:center; gap:12px;
+  padding:0 18px; border-bottom:1px solid var(--line);
+  background:#fff; position:sticky; top:0; z-index:5;
+}
+.back,.reset {
+  border:1px solid var(--line); background:#fff; color:#334155;
+  border-radius:10px; padding:9px 13px; font-weight:650; cursor:pointer;
+}
+.app-icon {
+  width:48px; height:44px; display:grid; place-items:center;
+  border-radius:12px; background:#eff6ff; font-size:25px;
+}
+.heading h1 { font-size:19px; margin:0 0 2px; font-weight:750; }
+.heading p { margin:0; font-size:13px; color:#64748b; }
+.reset { margin-left:auto; }
+.stage-wrap { padding:12px 6px 0; background:#fff; }
+.stage {
+  width:100%; height:455px; display:block; background:#fff;
+  border:1px solid #e2e8f0; border-radius:13px;
+}
+.stage-controls {
+  display:flex; justify-content:space-between; align-items:center;
+  gap:12px; padding:10px 20px 13px; flex-wrap:wrap;
+}
+.zoom-group {
+  display:flex; align-items:center; gap:8px;
+  border:1px solid #e2e8f0; border-radius:30px;
+  padding:6px 12px; box-shadow:0 2px 8px #0f172a12;
+}
+.zoom-group button {
+  border:0; background:transparent; cursor:pointer;
+  color:#334155; font-weight:700; padding:3px 6px;
+}
+.hint {
+  background:#475569; color:#fff; border-radius:30px;
+  padding:8px 16px; font-size:13px; font-weight:600;
+}
+.dashboard {
+  display:grid; grid-template-columns:1.05fr .95fr 1.2fr;
+  gap:14px; padding:14px 20px 24px;
+  border-top:1px solid var(--line); background:#f8fafc;
+}
+.card {
+  background:#fff; border:1px solid #dce5ef; border-radius:15px;
+  padding:16px; min-width:0; box-shadow:0 1px 2px #0f172a08;
+}
+.card h2 {
+  font-size:16px; margin:0 0 13px; padding-bottom:11px;
+  border-bottom:1px solid #edf2f7;
+  display:flex; gap:9px; align-items:center;
+}
+.card h2 span { color:var(--blue); font-size:18px; }
+.control {
+  padding:4px 0 13px; border-bottom:1px solid #edf2f7;
+  margin-bottom:9px;
+}
+.control-head {
+  display:flex; align-items:center; justify-content:space-between;
+  gap:8px; font-size:13px; font-weight:700; margin-bottom:7px;
+}
+output {
+  font-family:ui-monospace,monospace; background:#eff6ff;
+  color:#1d4ed8; padding:4px 8px; border-radius:7px;
+  white-space:nowrap;
+}
+input[type=range] { width:100%; accent-color:var(--blue); cursor:pointer; }
+.sub { font-size:11px; color:#64748b; margin-top:3px; }
+.control.speed input { accent-color:#2563eb; }
+.control.angle input { accent-color:#e11d48; }
+.control.height input { accent-color:#9333ea; }
+.control.gravity input { accent-color:#059669; }
+.toggle-row {
+  display:flex; align-items:center; gap:8px;
+  font-size:12px; color:#334155; margin:9px 0;
+}
+.toggle-row input { accent-color:var(--blue); }
+.actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+.primary,.secondary {
+  border:0; border-radius:9px; padding:9px 13px;
+  font-weight:700; cursor:pointer;
+}
+.primary { background:var(--blue); color:white; }
+.secondary { background:#eff6ff; color:#1d4ed8; }
+.primary:hover { background:#1d4ed8; }
+.stats { display:grid; grid-template-columns:1fr 1fr; gap:9px; }
+.stat {
+  border:1px solid #e2e8f0; background:#f8fafc;
+  border-radius:11px; padding:12px; min-height:83px;
+}
+.stat .label {
+  color:#64748b; font-size:11px;
+  text-transform:uppercase; letter-spacing:.04em;
+}
+.stat .value { font-size:20px; font-weight:800; margin-top:5px; }
+.stat .unit { color:#64748b; font-size:11px; margin-top:2px; }
+.blue { color:#2563eb; }
+.green { color:#059669; }
+.orange { color:#ea580c; }
+.purple { color:#9333ea; }
+.insight {
+  margin-top:10px; padding:11px 12px; border:1px solid #a7f3d0;
+  background:#ecfdf5; color:#047857; border-radius:10px;
+  font-size:12px; line-height:1.5;
+}
+.formula {
+  font-family:ui-monospace,monospace; background:#f8fafc;
+  border:1px solid #e2e8f0; border-radius:9px;
+  padding:10px; font-size:12px; line-height:1.8;
+  overflow-wrap:anywhere;
+}
+.step { font-size:12px; font-weight:750; margin:12px 0 6px; color:#334155; }
+.formula-note { font-size:11px; color:#64748b; margin-top:5px; }
+.legend {
+  display:flex; flex-wrap:wrap; gap:12px; font-size:11px;
+  color:#475569; padding:0 20px 12px;
+}
+.dot {
+  display:inline-block; width:9px; height:9px;
+  border-radius:50%; margin-right:5px;
+}
+@media(max-width:1000px) {
+  .dashboard { grid-template-columns:1fr 1fr; }
+  .formula-card { grid-column:1/-1; }
+}
+@media(max-width:650px) {
+  .topbar { height:auto; min-height:64px; padding:10px; gap:8px; }
+  .back { padding:8px; font-size:12px; }
+  .app-icon { width:38px; height:38px; }
+  .heading h1 { font-size:15px; }
+  .heading p { font-size:11px; }
+  .stage { height:340px; }
+  .dashboard { grid-template-columns:1fr; padding:10px; }
+  .formula-card { grid-column:auto; }
+  .hint { font-size:11px; }
+  .stage-controls { padding:8px 10px; }
+}
+</style>
+</head>
+
+<body>
+<div class="app">
+
+<header class="topbar">
+  <button class="back" onclick="history.length>1?history.back():null">
+    ← All Labs
+  </button>
+  <div class="app-icon">🚀</div>
+  <div class="heading">
+    <h1>Projectile Motion Lab</h1>
+    <p>Class 11 Physics — Motion in a Plane &amp; Projectile Trajectory</p>
+  </div>
+  <button class="reset" id="resetTop">↻ Reset</button>
+</header>
+
+<section class="stage-wrap">
+
+  <canvas id="scene" class="stage"
+    aria-label="Interactive projectile motion simulation"></canvas>
+
+  <div class="legend">
+    <span><i class="dot" style="background:#2563eb"></i>Projectile trajectory</span>
+    <span><i class="dot" style="background:#059669"></i>Velocity components</span>
+    <span><i class="dot" style="background:#ea580c"></i>Gravity</span>
+    <span><i class="dot" style="background:#9333ea"></i>Launch vector</span>
+  </div>
+
+  <div class="stage-controls">
+    <div class="zoom-group">
+      <button id="zoomIn">＋</button>
+      <span id="zoomLabel" style="font:12px ui-monospace">100%</span>
+      <button id="zoomOut">－</button>
+      <button id="resetView" style="margin-left:8px">Reset View</button>
+    </div>
+
+    <div class="hint">
+      💡 Change speed and angle to observe how the projectile follows a curved path
+    </div>
+
+    <button class="secondary" id="wholeScreen">⛶ Whole Screen</button>
+  </div>
+</section>
+
+<section class="dashboard">
+
+  <!-- LAUNCH PARAMETERS -->
+  <article class="card">
+    <h2><span>☷</span> Launch Parameters</h2>
+
+    <div class="control speed">
+      <div class="control-head">
+        <label for="speed">Initial Speed (u)</label>
+        <output id="speedOut">20.0 m/s</output>
+      </div>
+      <input id="speed" type="range" min="5" max="40" step=".5" value="20">
+      <div class="sub">Magnitude of the initial velocity</div>
+    </div>
+
+    <div class="control angle">
+      <div class="control-head">
+        <label for="angle">Launch Angle (θ)</label>
+        <output id="angleOut">45°</output>
+      </div>
+      <input id="angle" type="range" min="5" max="85" step="1" value="45">
+      <div class="sub">Measured above the horizontal ground</div>
+    </div>
+
+    <div class="control height">
+      <div class="control-head">
+        <label for="height">Initial Height (h)</label>
+        <output id="heightOut">0.0 m</output>
+      </div>
+      <input id="height" type="range" min="0" max="30" step=".5" value="0">
+      <div class="sub">Height of launch point above the ground</div>
+    </div>
+
+    <div class="control gravity">
+      <div class="control-head">
+        <label for="gravity">Gravity (g)</label>
+        <output id="gravityOut">9.8 m/s²</output>
+      </div>
+      <input id="gravity" type="range" min="1" max="20" step=".1" value="9.8">
+      <div class="sub">Acceleration due to gravity (downward)</div>
+    </div>
+
+    <label class="toggle-row">
+      <input type="checkbox" id="components" checked>
+      Show velocity components
+    </label>
+
+    <label class="toggle-row">
+      <input type="checkbox" id="grid" checked>
+      Show coordinate grid
+    </label>
+
+    <label class="toggle-row">
+      <input type="checkbox" id="vectors" checked>
+      Show launch vector
+    </label>
+
+    <div class="actions">
+      <button class="primary" id="play">▶ Play Motion</button>
+      <button class="secondary" id="trace">Show Full Path</button>
+      <button class="secondary" id="reset">Reset</button>
+    </div>
+  </article>
+
+  <!-- MOTION CHARACTERISTICS -->
+  <article class="card">
+    <h2><span>✧</span> Motion Characteristics</h2>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="label">Maximum Height</div>
+        <div class="value blue" id="maxHeight">10.2 m</div>
+        <div class="unit">Above launch level</div>
+      </div>
+
+      <div class="stat">
+        <div class="label">Total Flight Time</div>
+        <div class="value green" id="flightTime">2.89 s</div>
+        <div class="unit">Until ground impact</div>
+      </div>
+
+      <div class="stat">
+        <div class="label">Horizontal Range</div>
+        <div class="value orange" id="range">40.8 m</div>
+        <div class="unit">Horizontal displacement</div>
+      </div>
+
+      <div class="stat">
+        <div class="label">Impact Speed</div>
+        <div class="value purple" id="impactSpeed">20.0 m/s</div>
+        <div class="unit">Speed just before impact</div>
+      </div>
+
+      <div class="stat">
+        <div class="label">Horizontal Velocity</div>
+        <div class="value blue" id="vx">14.14 m/s</div>
+        <div class="unit">Constant (no air resistance)</div>
+      </div>
+
+      <div class="stat">
+        <div class="label">Vertical Velocity</div>
+        <div class="value green" id="vy">14.14 m/s</div>
+        <div class="unit">Initial vertical component</div>
+      </div>
+    </div>
+
+    <div class="insight" id="insight">
+      At 45°, the projectile has equal initial horizontal and vertical
+      velocity components. For same launch and landing height, this
+      angle gives maximum range.
+    </div>
+  </article>
+
+  <!-- FORMULA DERIVATION -->
+  <article class="card formula-card">
+    <h2><span>▦</span> Live Projectile Motion Derivation</h2>
+
+    <div class="step">1. Given Values</div>
+    <div class="formula" id="given">
+      u = 20.0 m/s &nbsp; θ = 45° &nbsp; h = 0.0 m<br>
+      g = 9.8 m/s²
+    </div>
+
+    <div class="step">2. Resolve Initial Velocity</div>
+    <div class="formula" id="resolve">
+      uₓ = u cos θ = 20 cos 45° = 14.14 m/s<br>
+      uᵧ = u sin θ = 20 sin 45° = 14.14 m/s
+    </div>
+
+    <div class="step">3. Equations of Motion</div>
+    <div class="formula">
+      x(t) = uₓ t<br>
+      y(t) = h + uᵧ t − ½gt²<br>
+      vᵧ(t) = uᵧ − gt
+    </div>
+
+    <div class="step">4. Calculated Results</div>
+    <div class="formula" id="results">
+      T = 2uᵧ/g = 2.89 s<br>
+      H = uᵧ²/(2g) = 10.20 m<br>
+      R = uₓ × T = 40.82 m
+    </div>
+
+    <div class="formula-note">
+      Ideal projectile model: air resistance is neglected and gravity is constant.
+    </div>
+  </article>
+
+</section>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const canvas = $('scene');
+  const ctx = canvas.getContext('2d');
+
+  const controls = ['speed','angle','height','gravity'];
+
+  let zoom = 1;
+  let elapsed = 0;
+  let playing = false;
+  let lastTime = 0;
+  let showFull = true;
+  let animationId = null;
+  let values = {};
+
+  const fmt = (n,d=2) =>
+    Number.isFinite(n) ? n.toFixed(d) : '—';
+
+  function read() {
+    values = {
+      u:+$('speed').value,
+      angle:+$('angle').value,
+      h:+$('height').value,
+      g:+$('gravity').value,
+      components:$('components').checked,
+      grid:$('grid').checked,
+      vectors:$('vectors').checked
+    };
+
+    values.rad = values.angle*Math.PI/180;
+    values.ux = values.u*Math.cos(values.rad);
+    values.uy = values.u*Math.sin(values.rad);
+
+    // Positive root of h + uy*t - 0.5*g*t² = 0
+    values.T = (
+      values.uy +
+      Math.sqrt(values.uy**2 + 2*values.g*values.h)
+    ) / values.g;
+
+    values.H = values.uy**2/(2*values.g);
+    values.totalH = values.h + values.H;
+    values.R = values.ux*values.T;
+
+    values.impactVy = values.uy-values.g*values.T;
+    values.impact = Math.hypot(values.ux,values.impactVy);
+
+    updateText();
+    draw();
+  }
+
+  function updateText() {
+    const v = values;
+
+    $('speedOut').textContent = fmt(v.u,1)+' m/s';
+    $('angleOut').textContent = fmt(v.angle,0)+'°';
+    $('heightOut').textContent = fmt(v.h,1)+' m';
+    $('gravityOut').textContent = fmt(v.g,1)+' m/s²';
+
+    $('maxHeight').textContent = fmt(v.H)+' m';
+    $('flightTime').textContent = fmt(v.T)+' s';
+    $('range').textContent = fmt(v.R)+' m';
+    $('impactSpeed').textContent = fmt(v.impact)+' m/s';
+    $('vx').textContent = fmt(v.ux)+' m/s';
+    $('vy').textContent = fmt(v.uy)+' m/s';
+
+    $('given').innerHTML =
+      `u = ${fmt(v.u,1)} m/s &nbsp; θ = ${fmt(v.angle,0)}° &nbsp; h = ${fmt(v.h,1)} m<br>
+       g = ${fmt(v.g,1)} m/s²`;
+
+    $('resolve').innerHTML =
+      `uₓ = u cos θ = ${fmt(v.u,1)} cos ${fmt(v.angle,0)}° = ${fmt(v.ux)} m/s<br>
+       uᵧ = u sin θ = ${fmt(v.u,1)} sin ${fmt(v.angle,0)}° = ${fmt(v.uy)} m/s`;
+
+    $('results').innerHTML =
+      `T = (uᵧ + √(uᵧ² + 2gh))/g = ${fmt(v.T)} s<br>
+       H = uᵧ²/(2g) = ${fmt(v.H)} m above launch<br>
+       R = uₓ × T = ${fmt(v.R)} m`;
+
+    let message;
+
+    if(v.h===0 && Math.abs(v.angle-45)<.6) {
+      message = 'At 45°, horizontal and vertical initial velocity components are equal. For equal launch and landing heights, this angle gives maximum range.';
+    } else if(v.angle<45) {
+      message = 'A lower launch angle gives a flatter trajectory and shorter time in the air. Try increasing the angle and compare the range.';
+    } else {
+      message = 'A higher launch angle gives a taller trajectory and more time in the air, but the horizontal component of velocity becomes smaller.';
+    }
+
+    if(v.h>0) {
+      message += ' The projectile also starts above ground, increasing its total flight time and range.';
+    }
+
+    $('insight').textContent = message;
+  }
+
+  function resize() {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = Math.max(1,window.devicePixelRatio||1);
+
+    canvas.width = Math.round(rect.width*dpr);
+    canvas.height = Math.round(rect.height*dpr);
+
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    draw();
+  }
+
+  function arrow(x1,y1,x2,y2,color,width=2.5) {
+    const a = Math.atan2(y2-y1,x2-x1);
+    const head = 9;
+
+    ctx.strokeStyle = color;
+    ctx.fillStyle = color;
+    ctx.lineWidth = width;
+
+    ctx.beginPath();
+    ctx.moveTo(x1,y1);
+    ctx.lineTo(x2,y2);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(x2,y2);
+    ctx.lineTo(
+      x2-head*Math.cos(a-.48),
+      y2-head*Math.sin(a-.48)
+    );
+    ctx.lineTo(
+      x2-head*Math.cos(a+.48),
+      y2-head*Math.sin(a+.48)
+    );
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  function draw() {
+    if(!ctx || !values.u) return;
+
+    const W = canvas.clientWidth;
+    const H = canvas.clientHeight;
+
+    if(!W || !H) return;
+
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0,0,W,H);
+
+    const pad = {l:58,r:34,t:35,b:48};
+
+    const scale = Math.min(
+      (W-pad.l-pad.r)/Math.max(values.R*1.18,10),
+      (H-pad.t-pad.b)/Math.max(values.totalH*1.65+3,8)
+    )*zoom;
+
+    const originX = pad.l+10;
+    const groundY = H-pad.b;
+
+    const X = x => originX+x*scale;
+    const Y = y => groundY-y*scale;
+
+    // Coordinate grid
+    if(values.grid) {
+      ctx.strokeStyle = '#edf2f7';
+      ctx.lineWidth = 1;
+      ctx.fillStyle = '#64748b';
+      ctx.font = '10px ui-monospace,monospace';
+
+      const xStep = niceStep((W-pad.l-pad.r)/scale/7);
+      const yStep = niceStep((H-pad.t-pad.b)/scale/5);
+
+      for(let x=0;x<=values.R*1.15;x+=xStep) {
+        ctx.beginPath();
+        ctx.moveTo(X(x),pad.t);
+        ctx.lineTo(X(x),groundY);
+        ctx.stroke();
+        ctx.fillText(x.toFixed(0),X(x)-4,groundY+17);
+      }
+
+      for(let y=0;y<=values.totalH*1.4+2;y+=yStep) {
+        ctx.beginPath();
+        ctx.moveTo(originX,Y(y));
+        ctx.lineTo(W-pad.r,Y(y));
+        ctx.stroke();
+
+        if(y>0) ctx.fillText(y.toFixed(0),8,Y(y)+3);
+      }
+
+      ctx.fillText('x (m)',W-pad.r-24,H-10);
+      ctx.fillText('y (m)',10,18);
+    }
+
+    // Ground baseline
+    ctx.setLineDash([7,5]);
+    ctx.strokeStyle = '#64748b';
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(0,groundY);
+    ctx.lineTo(W,groundY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.fillStyle = '#475569';
+    ctx.font = 'bold 11px system-ui';
+    ctx.fillText('GROUND / X-AXIS',12,groundY-10);
+
+    // Projectile trajectory
+    ctx.beginPath();
+
+    for(let i=0;i<=180;i++) {
+      const t = values.T*i/180;
+      const x = values.ux*t;
+      const y = values.h+values.uy*t-.5*values.g*t*t;
+
+      if(i===0) ctx.moveTo(X(x),Y(y));
+      else ctx.lineTo(X(x),Y(y));
+    }
+
+    ctx.strokeStyle = '#2563eb';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    // Maximum height / apex
+    const apexT = values.uy/values.g;
+    const apexX = values.ux*apexT;
+
+    ctx.setLineDash([4,5]);
+    ctx.strokeStyle = '#a78bfa';
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.moveTo(X(apexX),Y(values.totalH));
+    ctx.lineTo(X(apexX),groundY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.fillStyle = '#7c3aed';
+    ctx.font = 'bold 11px system-ui';
+    ctx.fillText('APEX',X(apexX)+6,Y(values.totalH)-9);
+
+    ctx.beginPath();
+    ctx.arc(X(apexX),Y(values.totalH),4,0,Math.PI*2);
+    ctx.fill();
+
+    // Launch point
+    const launchX = X(0);
+    const launchY = Y(values.h);
+
+    ctx.fillStyle = '#9333ea';
+    ctx.beginPath();
+    ctx.arc(launchX,launchY,5,0,Math.PI*2);
+    ctx.fill();
+
+    ctx.fillStyle = '#6b21a8';
+    ctx.font = 'bold 11px system-ui';
+    ctx.fillText('LAUNCH',launchX+9,launchY-12);
+
+    // Initial velocity vector
+    if(values.vectors) {
+      const len = Math.min(75,values.u*3);
+
+      arrow(
+        launchX,
+        launchY,
+        launchX+len*Math.cos(values.rad),
+        launchY-len*Math.sin(values.rad),
+        '#9333ea',
+        2.6
+      );
+
+      ctx.fillStyle = '#7e22ce';
+      ctx.fillText(
+        'u',
+        launchX+len*Math.cos(values.rad)+5,
+        launchY-len*Math.sin(values.rad)-4
+      );
+    }
+
+    // Horizontal range
+    ctx.strokeStyle = '#ea580c';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([3,4]);
+    ctx.beginPath();
+    ctx.moveTo(X(values.R),Y(0));
+    ctx.lineTo(X(values.R),groundY-20);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.fillStyle = '#ea580c';
+    ctx.font = 'bold 11px system-ui';
+    ctx.fillText(
+      'R = '+fmt(values.R,1)+' m',
+      Math.max(launchX+5,X(values.R)-72),
+      groundY-25
+    );
+
+    // Current projectile position
+    const t = Math.min(elapsed,values.T);
+    const px = values.ux*t;
+    const py = Math.max(
+      0,
+      values.h+values.uy*t-.5*values.g*t*t
+    );
+
+    const bx = X(px);
+    const by = Y(py);
+
+    const currentVx = values.ux;
+    const currentVy = values.uy-values.g*t;
+
+    ctx.fillStyle = '#0f172a';
+    ctx.beginPath();
+    ctx.arc(bx,by,7,0,Math.PI*2);
+    ctx.fill();
+
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Velocity components
+    if(values.components && t>0) {
+      arrow(bx,by,bx+currentVx*1.7,by,'#059669',2);
+      arrow(bx,by,bx,by-currentVy*1.7,'#10b981',2);
+
+      ctx.fillStyle = '#047857';
+      ctx.font = 'bold 10px system-ui';
+      ctx.fillText('vₓ',bx+currentVx*1.7+3,by-5);
+      ctx.fillText('vᵧ',bx+6,by-currentVy*1.7-5);
+    }
+
+    ctx.fillStyle = '#0f172a';
+    ctx.font = 'bold 11px system-ui';
+    ctx.fillText(
+      't = '+fmt(t,2)+' s',
+      Math.min(W-70,bx+12),
+      Math.max(18,by-15)
+    );
+
+    if(t>=values.T-.001) {
+      ctx.fillStyle = '#ea580c';
+      ctx.fillText('IMPACT',Math.max(launchX+5,bx-20),groundY-10);
+    }
+  }
+
+  function niceStep(raw) {
+    const p = Math.pow(10,Math.floor(Math.log10(Math.max(raw,.001))));
+    const n = raw/p;
+    return (n<2?1:n<5?2:5)*p;
+  }
+
+  function stop() {
+    playing = false;
+
+    if(animationId) cancelAnimationFrame(animationId);
+
+    animationId = null;
+    $('play').textContent = '▶ Play Motion';
+  }
+
+  function tick(now) {
+    if(!playing) return;
+
+    if(!lastTime) lastTime = now;
+
+    elapsed += (now-lastTime)/1000;
+    lastTime = now;
+
+    if(elapsed>=values.T) {
+      elapsed = values.T;
+      stop();
+    }
+
+    draw();
+
+    if(playing) {
+      animationId = requestAnimationFrame(tick);
+    }
+  }
+
+  function reset() {
+    stop();
+    elapsed = 0;
+    lastTime = 0;
+    showFull = true;
+    draw();
+  }
+
+  // Slider controls
+  controls.forEach(id => {
+    $(id).addEventListener('input',() => {
+      reset();
+      read();
+    });
+  });
+
+  // Checkbox controls
+  ['components','grid','vectors'].forEach(id => {
+    $(id).addEventListener('change',read);
+  });
+
+  // Play / Pause
+  $('play').addEventListener('click',() => {
+    if(playing) {
+      stop();
+      return;
+    }
+
+    if(elapsed>=values.T) elapsed = 0;
+
+    showFull = false;
+    playing = true;
+    lastTime = 0;
+
+    $('play').textContent = 'Ⅱ Pause';
+
+    animationId = requestAnimationFrame(tick);
+  });
+
+  // Full trajectory
+  $('trace').addEventListener('click',() => {
+    stop();
+    showFull = true;
+    elapsed = values.T;
+    draw();
+  });
+
+  $('reset').addEventListener('click',reset);
+
+  // Reset all parameters
+  $('resetTop').addEventListener('click',() => {
+    controls.forEach((id,i) => {
+      $(id).value = [20,45,0,9.8][i];
+    });
+
+    $('components').checked = true;
+    $('grid').checked = true;
+    $('vectors').checked = true;
+
+    zoom = 1;
+    $('zoomLabel').textContent = '100%';
+
+    reset();
+    read();
+  });
+
+  // Zoom controls
+  $('zoomIn').addEventListener('click',() => {
+    zoom = Math.min(zoom*1.15,2.5);
+    $('zoomLabel').textContent = Math.round(zoom*100)+'%';
+    draw();
+  });
+
+  $('zoomOut').addEventListener('click',() => {
+    zoom = Math.max(zoom/1.15,.55);
+    $('zoomLabel').textContent = Math.round(zoom*100)+'%';
+    draw();
+  });
+
+  $('resetView').addEventListener('click',() => {
+    zoom = 1;
+    $('zoomLabel').textContent = '100%';
+    draw();
+  });
+
+  // Fullscreen
+  $('wholeScreen').addEventListener('click',() => {
+    if(canvas.requestFullscreen) canvas.requestFullscreen();
+  });
+
+  window.addEventListener('resize',resize);
+
+  resize();
+  read();
+})();
+</script>
+
+</body>
+</html>
